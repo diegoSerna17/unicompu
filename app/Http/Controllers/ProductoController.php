@@ -3,26 +3,23 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class ProductoController extends Controller
 {
+    private $file = 'productos.json';
+
     // =========================
-    // LEER PRODUCTOS (JSON)
+    // LEER PRODUCTOS
     // =========================
     private function obtenerProductos()
     {
-        $path = storage_path('app/productos.json');
-
         // Crear archivo si no existe
-        if (!file_exists($path)) {
-            if (!file_exists(storage_path('app'))) {
-                mkdir(storage_path('app'), 0777, true);
-            }
-
-            file_put_contents($path, json_encode([]));
+        if (!Storage::exists($this->file)) {
+            Storage::put($this->file, json_encode([]));
         }
 
-        $json = file_get_contents($path);
+        $json = Storage::get($this->file);
         $productos = json_decode($json, true);
 
         return is_array($productos) ? $productos : [];
@@ -33,10 +30,8 @@ class ProductoController extends Controller
     // =========================
     private function guardarProductos($productos)
     {
-        $path = storage_path('app/productos.json');
-
-        file_put_contents(
-            $path,
+        Storage::put(
+            $this->file,
             json_encode(array_values($productos), JSON_PRETTY_PRINT)
         );
     }
@@ -47,7 +42,6 @@ class ProductoController extends Controller
     public function index()
     {
         $productos = $this->obtenerProductos();
-
         return view('productos', compact('productos'));
     }
 
@@ -60,7 +54,7 @@ class ProductoController extends Controller
     }
 
     // =========================
-    // STORE (CREAR)
+    // STORE
     // =========================
     public function store(Request $request)
     {
@@ -74,7 +68,6 @@ class ProductoController extends Controller
 
         $productos = $this->obtenerProductos();
 
-        // Evitar duplicados de código
         foreach ($productos as $p) {
             if ($p['codigo'] === $request->codigo) {
                 return back()->with('error', 'El código ya existe');
