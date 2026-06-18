@@ -54,23 +54,27 @@ class ProductoController extends Controller
     }
 
     /**
-     * Almacena un nuevo producto en la sesión.
+     * Almacena un nuevo producto en la sesión utilizando 'codigo'.
      */
     public function store(Request $request)
     {
         $request->validate([
-            'nombre' => 'required|string|max:255',
-            'precio' => 'required|numeric|min:0',
-            'descripcion' => 'nullable|string',
+            'codigo'    => 'required|string|max:255',
+            'nombre'    => 'required|string|max:255',
+            'precio'    => 'required|numeric|min:0',
+            'cantidad'  => 'required|integer|min:0',
+            'categoria' => 'required|string|max:255',
         ]);
 
         $productos = $this->obtenerProductos();
 
+        // CORREGIDO: Ahora guardamos 'codigo' en vez de 'id', y sumamos cantidad y categoria
         $nuevoProducto = [
-            'id' => time(), // Este sigue siendo tu identificador único en el array
-            'nombre' => $request->nombre,
-            'precio' => $request->precio,
-            'descripcion' => $request->descripcion ?? '',
+            'codigo'    => $request->codigo,
+            'nombre'    => $request->nombre,
+            'precio'    => $request->precio,
+            'cantidad'  => $request->cantidad,
+            'categoria' => $request->categoria,
         ];
 
         $productos[] = $nuevoProducto;
@@ -80,8 +84,7 @@ class ProductoController extends Controller
     }
 
     /**
-     * Muestra el formulario para editar un producto específico.
-     * Cambiado $id por $codigo para que coincida con tu ruta
+     * Muestra el formulario para editar un producto específico utilizando 'codigo'.
      */
     public function edit($codigo)
     {
@@ -89,7 +92,8 @@ class ProductoController extends Controller
         $producto = null;
 
         foreach ($productos as $p) {
-            if ($p['id'] == $codigo) {
+            // CORREGIDO: Buscamos usando la llave 'codigo'
+            if (isset($p['codigo']) && $p['codigo'] == $codigo) {
                 $producto = $p;
                 break;
             }
@@ -103,25 +107,27 @@ class ProductoController extends Controller
     }
 
     /**
-     * Actualiza un producto existente en la sesión.
-     * Cambiado $id por $codigo para que coincida con tu ruta
+     * Actualiza un producto existente en la sesión mediante su 'codigo'.
      */
     public function update(Request $request, $codigo)
     {
         $request->validate([
-            'nombre' => 'required|string|max:255',
-            'precio' => 'required|numeric|min:0',
-            'descripcion' => 'nullable|string',
+            'nombre'    => 'required|string|max:255',
+            'precio'    => 'required|numeric|min:0',
+            'cantidad'  => 'required|integer|min:0',
+            'categoria' => 'required|string|max:255',
         ]);
 
         $productos = $this->obtenerProductos();
         $encontrado = false;
 
         foreach ($productos as &$producto) {
-            if ($producto['id'] == $codigo) {
-                $producto['nombre'] = $request->nombre;
-                $producto['precio'] = $request->precio;
-                $producto['descripcion'] = $request->descripcion ?? '';
+            // CORREGIDO: Buscamos y actualizamos usando la llave 'codigo'
+            if (isset($producto['codigo']) && $producto['codigo'] == $codigo) {
+                $producto['nombre']    = $request->nombre;
+                $producto['precio']    = $request->precio;
+                $producto['cantidad']  = $request->cantidad;
+                $producto['categoria'] = $request->categoria;
                 $encontrado = true;
                 break;
             }
@@ -137,15 +143,15 @@ class ProductoController extends Controller
     }
 
     /**
-     * Elimina un producto de la sesión.
-     * Cambiado $id por $codigo para que coincida con tu ruta
+     * Elimina un producto de la sesión usando 'codigo'.
      */
     public function destroy($codigo)
     {
         $productos = $this->obtenerProductos();
         
+        // CORREGIDO: Filtramos comparando con la llave 'codigo'
         $productosFiltrados = array_filter($productos, function ($producto) use ($codigo) {
-            return $producto['id'] != $codigo;
+            return isset($producto['codigo']) ? $producto['codigo'] != $codigo : true;
         });
 
         if (count($productos) === count($productosFiltrados)) {
@@ -158,7 +164,7 @@ class ProductoController extends Controller
     }
 
     /**
-     * Endpoint opcional por si necesitas responder en formato JSON (Ruta de API)
+     * Endpoint API para responder en formato JSON
      */
     public function api()
     {

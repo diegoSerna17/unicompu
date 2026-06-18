@@ -3,14 +3,11 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProductoController;
 
-Route::get('/', [ProductoController::class, 'index']);
+Route::get('/', [ProductoController::class, 'index']); // 👈 HOME
 
-// Cambiado el nombre de productos.index a solo 'productos'
-Route::get('/productos', [ProductoController::class, 'index'])->name('productos');
+Route::get('/productos', [ProductoController::class, 'index'])->name('productos.index');
 Route::get('/productos/create', [ProductoController::class, 'create'])->name('productos.create');
-
-// Cambiado el nombre de productos.store a solo 'productos' (funciona porque es método POST)
-Route::post('/productos', [ProductoController::class, 'store'])->name('productos');
+Route::post('/productos', [ProductoController::class, 'store'])->name('productos.store');
 
 Route::get('/productos/{codigo}/edit', [ProductoController::class, 'edit'])->name('productos.edit');
 Route::put('/productos/{codigo}', [ProductoController::class, 'update'])->name('productos.update');

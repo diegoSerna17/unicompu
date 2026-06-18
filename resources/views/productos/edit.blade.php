@@ -128,13 +128,13 @@
     <div class="form-container">
         <h2>Editar Producto</h2>
 
-        <form action="{{ route('productos.update', $producto['id']) }}" method="POST">
+        <form action="{{ route('productos.update', $producto['codigo']) }}" method="POST">
             @csrf
             @method('PUT')
 
             <div class="form-group">
                 <label>Código (No editable)</label>
-                <input value="{{ $producto['id'] }}" disabled>
+                <input value="{{ $producto['codigo'] }}" disabled>
             </div>
 
             <div class="form-group">
