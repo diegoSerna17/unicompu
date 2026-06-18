@@ -120,7 +120,7 @@
     <div class="form-container">
         <h2>Crear Producto</h2>
 
-        <form action="{{ route('productos.store') }}" method="POST">
+        <form action="{{ route('productos.index') }}" method="POST">
             @csrf
 
             <div class="form-group">
@@ -152,7 +152,7 @@
             <button type="submit">Guardar Producto</button>
         </form>
 
-        <a href="{{ route('productos.index') }}" class="back-link">← Volver al listado</a>
+        <a href="{{ route('productos') }}" class="back-link">← Volver al listado</a>
     </div>
 
 </body>
