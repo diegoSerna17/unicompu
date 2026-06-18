@@ -1,118 +1,70 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Editar Producto</title>
+    <meta charset="UTF-8">
+    <title>Editar Producto</title>
 
-<style>
-body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f4f6f9;
-    margin: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-}
+    <style>
+        body{
+            font-family: Arial;
+            background:#f3f4f6;
+            padding:30px;
+        }
 
-.form-container {
-    background: white;
-    padding: 30px;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-    width: 100%;
-    max-width: 400px;
-}
+        .container{
+            max-width:500px;
+            margin:auto;
+            background:white;
+            padding:20px;
+            border-radius:10px;
+        }
 
-h2 {
-    text-align: center;
-    margin-bottom: 24px;
-}
+        input{
+            width:100%;
+            padding:10px;
+            margin:8px 0;
+            border:1px solid #ddd;
+            border-radius:6px;
+        }
 
-.form-group {
-    margin-bottom: 16px;
-}
+        button{
+            width:100%;
+            padding:10px;
+            background:orange;
+            color:white;
+            border:none;
+            border-radius:6px;
+            cursor:pointer;
+        }
 
-label {
-    display: block;
-    margin-bottom: 6px;
-    font-weight: 600;
-}
-
-input {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-}
-
-input:disabled {
-    background: #f3f4f6;
-}
-
-button {
-    width: 100%;
-    background-color: #10b981;
-    color: white;
-    border: none;
-    padding: 12px;
-    border-radius: 8px;
-    cursor: pointer;
-}
-
-button:hover {
-    background-color: #059669;
-}
-
-.back-link {
-    display: block;
-    text-align: center;
-    margin-top: 15px;
-    color: #666;
-    text-decoration: none;
-}
-</style>
+        a{
+            display:block;
+            margin-top:10px;
+            text-align:center;
+            color:#2563eb;
+        }
+    </style>
 </head>
-
 <body>
 
-<div class="form-container">
-    <h2>Editar Producto</h2>
+<div class="container">
 
-    <form action="{{ route('productos.update', $producto['codigo'] ?? '') }}" method="POST">
+    <h2>✏️ Editar Producto</h2>
+
+    <form action="{{ route('productos.update', $producto['codigo']) }}" method="POST">
         @csrf
         @method('PUT')
 
-        <div class="form-group">
-            <label>Código (no editable)</label>
-            <input value="{{ $producto['codigo'] ?? '' }}" disabled>
-        </div>
-
-        <div class="form-group">
-            <label>Nombre</label>
-            <input name="nombre" value="{{ $producto['nombre'] ?? '' }}" required>
-        </div>
-
-        <div class="form-group">
-            <label>Precio</label>
-            <input name="precio" value="{{ $producto['precio'] ?? '' }}" required>
-        </div>
-
-        <div class="form-group">
-            <label>Cantidad</label>
-            <input name="cantidad" value="{{ $producto['cantidad'] ?? '' }}" required>
-        </div>
-
-        <div class="form-group">
-            <label>Categoría</label>
-            <input name="categoria" value="{{ $producto['categoria'] ?? '' }}" required>
-        </div>
+        <input type="text" name="nombre" value="{{ $producto['nombre'] }}" required>
+        <input type="number" name="precio" value="{{ $producto['precio'] }}" required>
+        <input type="number" name="cantidad" value="{{ $producto['cantidad'] }}" required>
+        <input type="text" name="categoria" value="{{ $producto['categoria'] }}" required>
 
         <button type="submit">Actualizar</button>
     </form>
 
-    <a href="{{ route('productos.index') }}" class="back-link">← Volver</a>
+    <a href="{{ route('productos.index') }}">← Volver</a>
+
 </div>
 
 </body>
