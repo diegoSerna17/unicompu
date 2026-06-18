@@ -7,49 +7,36 @@ use Illuminate\Http\Request;
 class ProductoController extends Controller
 {
     /**
-     * Obtiene la ruta del archivo JSON dependiendo del entorno.
-     */
-    private function getJsonPath()
-    {
-        // Si la carpeta /data existe (entorno de Render con disco persistente)
-        if (is_dir('/data')) {
-            return '/data/productos.json';
-        }
-        // Entorno local (tu PC)
-        return storage_path('app/productos.json');
-    }
-
-    /**
-     * Lee los productos desde el archivo JSON.
+     * Obtiene la lista de productos guardada en la sesión.
+     * Si no existe, la inicializa con los datos del archivo JSON original de storage.
      */
     private function obtenerProductos()
     {
-        $path = $this->getJsonPath();
-
-        // Si el archivo no existe, lo crea con un array vacío []
-        if (!file_exists($path)) {
-            file_put_contents($path, json_encode([], JSON_PRETTY_PRINT));
-            return [];
+        // Si ya existen productos en la sesión, los usamos
+        if (session()->has('productos')) {
+            return session('productos');
         }
 
-        $json = file_get_contents($path);
-        return json_decode($json, true) ?? [];
+        // Si es la primera vez, intentamos leer tu archivo JSON original de storage
+        $path = storage_path('app/productos.json');
+        if (file_exists($path)) {
+            $json = file_get_contents($path);
+            $productos = json_decode($json, true) ?? [];
+            
+            // Los guardamos en la sesión para el futuro
+            session(['productos' => $productos]);
+            return $productos;
+        }
+
+        return [];
     }
 
     /**
-     * Guarda la lista de productos en el archivo JSON.
+     * Guarda la lista de productos en la sesión del usuario (Gratis y sin errores de permisos).
      */
     private function guardarProductos($productos)
     {
-        $path = $this->getJsonPath();
-        
-        // Nos aseguramos de que el directorio exista (útil en local)
-        $dir = dirname($path);
-        if (!is_dir($dir)) {
-            mkdir($dir, 0755, true);
-        }
-
-        file_put_contents($path, json_encode(array_values($productos), JSON_PRETTY_PRINT));
+        session(['productos' => array_values($productos)]);
     }
 
     /**
@@ -62,7 +49,7 @@ class ProductoController extends Controller
     }
 
     /**
-     * Almacena un nuevo producto en el JSON.
+     * Almacena un nuevo producto en la sesión.
      */
     public function store(Request $request)
     {
@@ -74,7 +61,6 @@ class ProductoController extends Controller
 
         $productos = $this->obtenerProductos();
 
-        // Crear el nuevo producto con un ID único basado en el tiempo
         $nuevoProducto = [
             'id' => time(),
             'nombre' => $request->nombre,
@@ -89,7 +75,7 @@ class ProductoController extends Controller
     }
 
     /**
-     * Actualiza un producto existente en el JSON.
+     * Actualiza un producto existente en la sesión.
      */
     public function update(Request $request, $id)
     {
@@ -122,13 +108,12 @@ class ProductoController extends Controller
     }
 
     /**
-     * Elimina un producto del JSON.
+     * Elimina un producto de la sesión.
      */
     public function destroy($id)
     {
         $productos = $this->obtenerProductos();
         
-        // Filtramos para mantener todos los productos MENOS el que tenga el ID enviado
         $productosFiltrados = array_filter($productos, function ($producto) use ($id) {
             return $producto['id'] != $id;
         });
