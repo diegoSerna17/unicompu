@@ -12,18 +12,15 @@ class ProductoController extends Controller
      */
     private function obtenerProductos()
     {
-        // Si ya existen productos en la sesión, los usamos
         if (session()->has('productos')) {
             return session('productos');
         }
 
-        // Si es la primera vez, intentamos leer tu archivo JSON original de storage
         $path = storage_path('app/productos.json');
         if (file_exists($path)) {
             $json = file_get_contents($path);
             $productos = json_decode($json, true) ?? [];
             
-            // Los guardamos en la sesión para el futuro
             session(['productos' => $productos]);
             return $productos;
         }
@@ -32,7 +29,7 @@ class ProductoController extends Controller
     }
 
     /**
-     * Guarda la lista de productos en la sesión del usuario (Gratis y sin errores de permisos).
+     * Guarda la lista de productos en la sesión del usuario.
      */
     private function guardarProductos($productos)
     {
@@ -45,7 +42,15 @@ class ProductoController extends Controller
     public function index()
     {
         $productos = $this->obtenerProductos();
-        return view('productos.index', compact('productos'));
+        return view('productos', compact('productos'));
+    }
+
+    /**
+     * Muestra el formulario para crear un nuevo producto.
+     */
+    public function create()
+    {
+        return view('productos.create');
     }
 
     /**
@@ -62,7 +67,7 @@ class ProductoController extends Controller
         $productos = $this->obtenerProductos();
 
         $nuevoProducto = [
-            'id' => time(),
+            'id' => time(), // Este sigue siendo tu identificador único en el array
             'nombre' => $request->nombre,
             'precio' => $request->precio,
             'descripcion' => $request->descripcion ?? '',
@@ -75,9 +80,33 @@ class ProductoController extends Controller
     }
 
     /**
-     * Actualiza un producto existente en la sesión.
+     * Muestra el formulario para editar un producto específico.
+     * Cambiado $id por $codigo para que coincida con tu ruta
      */
-    public function update(Request $request, $id)
+    public function edit($codigo)
+    {
+        $productos = $this->obtenerProductos();
+        $producto = null;
+
+        foreach ($productos as $p) {
+            if ($p['id'] == $codigo) {
+                $producto = $p;
+                break;
+            }
+        }
+
+        if (!$producto) {
+            return redirect()->route('productos.index')->with('error', 'Producto no encontrado.');
+        }
+
+        return view('productos.edit', compact('producto'));
+    }
+
+    /**
+     * Actualiza un producto existente en la sesión.
+     * Cambiado $id por $codigo para que coincida con tu ruta
+     */
+    public function update(Request $request, $codigo)
     {
         $request->validate([
             'nombre' => 'required|string|max:255',
@@ -89,7 +118,7 @@ class ProductoController extends Controller
         $encontrado = false;
 
         foreach ($productos as &$producto) {
-            if ($producto['id'] == $id) {
+            if ($producto['id'] == $codigo) {
                 $producto['nombre'] = $request->nombre;
                 $producto['precio'] = $request->precio;
                 $producto['descripcion'] = $request->descripcion ?? '';
@@ -109,13 +138,14 @@ class ProductoController extends Controller
 
     /**
      * Elimina un producto de la sesión.
+     * Cambiado $id por $codigo para que coincida con tu ruta
      */
-    public function destroy($id)
+    public function destroy($codigo)
     {
         $productos = $this->obtenerProductos();
         
-        $productosFiltrados = array_filter($productos, function ($producto) use ($id) {
-            return $producto['id'] != $id;
+        $productosFiltrados = array_filter($productos, function ($producto) use ($codigo) {
+            return $producto['id'] != $codigo;
         });
 
         if (count($productos) === count($productosFiltrados)) {
@@ -125,5 +155,13 @@ class ProductoController extends Controller
         $this->guardarProductos($productosFiltrados);
 
         return redirect()->route('productos.index')->with('success', 'Producto eliminado correctamente.');
+    }
+
+    /**
+     * Endpoint opcional por si necesitas responder en formato JSON (Ruta de API)
+     */
+    public function api()
+    {
+        return response()->json($this->obtenerProductos());
     }
 }
