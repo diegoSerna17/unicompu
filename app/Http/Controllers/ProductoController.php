@@ -6,28 +6,25 @@ use Illuminate\Http\Request;
 
 class ProductoController extends Controller
 {
-    private function obtenerProductos()
-    {
-        $path = storage_path('app/productos.json');
+private function obtenerProductos()
+{
+    $path = storage_path('app/productos.json');
 
-        if (!file_exists($path)) {
-            file_put_contents($path, json_encode([]));
-        }
-
-        $productos = json_decode(file_get_contents($path), true);
-
-        return is_array($productos) ? $productos : [];
+    if (!file_exists($path)) {
+        file_put_contents($path, json_encode([]));
     }
 
-    private function guardarProductos($productos)
-    {
-        $path = storage_path('app/productos.json');
+    $productos = json_decode(file_get_contents($path), true);
 
-        file_put_contents(
-            $path,
-            json_encode(array_values($productos), JSON_PRETTY_PRINT)
-        );
-    }
+    return is_array($productos) ? $productos : [];
+}
+
+private function guardarProductos($productos)
+{
+    $path = storage_path('app/productos.json');
+
+    file_put_contents($path, json_encode(array_values($productos), JSON_PRETTY_PRINT));
+}
 
     public function index()
     {
