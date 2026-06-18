@@ -3,40 +3,53 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\File;
 
 class ProductoController extends Controller
 {
-    private $file = 'public/productos.json';
+    private $file = 'productos.json';
 
     // =========================
-    // LEER PRODUCTOS
+    // PATH REAL SEGURO
     // =========================
-    private function obtenerProductos()
+    private function getPath()
     {
-        if (!Storage::exists($this->file)) {
-            Storage::put($this->file, json_encode([]));
-        }
-
-        $json = Storage::get($this->file);
-        $productos = json_decode($json, true);
-
-        return is_array($productos) ? $productos : [];
+        return storage_path('app/' . $this->file);
     }
 
     // =========================
-    // GUARDAR PRODUCTOS
+    // LEER
+    // =========================
+    private function obtenerProductos()
+    {
+        $path = $this->getPath();
+
+        if (!File::exists($path)) {
+            File::ensureDirectoryExists(dirname($path));
+            File::put($path, json_encode([]));
+        }
+
+        $json = File::get($path);
+        $data = json_decode($json, true);
+
+        return is_array($data) ? $data : [];
+    }
+
+    // =========================
+    // GUARDAR
     // =========================
     private function guardarProductos($productos)
     {
-        Storage::put(
-            $this->file,
+        $path = $this->getPath();
+
+        File::ensureDirectoryExists(dirname($path));
+
+        File::put(
+            $path,
             json_encode(array_values($productos), JSON_PRETTY_PRINT)
         );
     }
 
-    // =========================
-    // INDEX
     // =========================
     public function index()
     {
@@ -45,17 +58,11 @@ class ProductoController extends Controller
         ]);
     }
 
-    // =========================
-    // CREATE
-    // =========================
     public function create()
     {
         return view('productos.create');
     }
 
-    // =========================
-    // STORE
-    // =========================
     public function store(Request $request)
     {
         $request->validate([
@@ -87,9 +94,6 @@ class ProductoController extends Controller
         return redirect()->route('productos.index');
     }
 
-    // =========================
-    // EDIT
-    // =========================
     public function edit($codigo)
     {
         $productos = $this->obtenerProductos();
@@ -103,9 +107,6 @@ class ProductoController extends Controller
         return view('productos.edit', compact('producto'));
     }
 
-    // =========================
-    // UPDATE
-    // =========================
     public function update(Request $request, $codigo)
     {
         $productos = $this->obtenerProductos();
@@ -124,25 +125,17 @@ class ProductoController extends Controller
         return redirect()->route('productos.index');
     }
 
-    // =========================
-    // DELETE
-    // =========================
     public function destroy($codigo)
     {
         $productos = $this->obtenerProductos();
 
-        $productos = array_filter($productos, function ($p) use ($codigo) {
-            return $p['codigo'] !== $codigo;
-        });
+        $productos = array_filter($productos, fn($p) => $p['codigo'] !== $codigo);
 
         $this->guardarProductos($productos);
 
         return redirect()->route('productos.index');
     }
 
-    // =========================
-    // API
-    // =========================
     public function api()
     {
         return response()->json($this->obtenerProductos());
