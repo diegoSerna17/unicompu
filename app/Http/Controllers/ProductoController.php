@@ -16,7 +16,9 @@ class ProductoController extends Controller
             file_put_contents($ruta, '[]');
         }
 
-        return json_decode(file_get_contents($ruta), true);
+        $data = file_get_contents($ruta);
+
+        return json_decode($data, true) ?? [];
     }
 
     private function guardarProductos($productos)
@@ -28,7 +30,7 @@ class ProductoController extends Controller
 
     public function index()
     {
-        $productos = $this->obtenerProductos();
+        $productos = $this->obtenerProductos() ?? [];
         return view('productos', compact('productos'));
     }
 
@@ -39,14 +41,14 @@ class ProductoController extends Controller
 
     public function store(Request $request)
     {
-        $productos = $this->obtenerProductos();
+        $productos = $this->obtenerProductos() ?? [];
 
         $productos[] = [
-            'codigo' => $request->codigo,
-            'nombre' => $request->nombre,
-            'precio' => $request->precio,
-            'cantidad' => $request->cantidad,
-            'categoria' => $request->categoria,
+            'codigo' => $request->codigo ?? '',
+            'nombre' => $request->nombre ?? '',
+            'precio' => $request->precio ?? 0,
+            'cantidad' => $request->cantidad ?? 0,
+            'categoria' => $request->categoria ?? '',
         ];
 
         $this->guardarProductos($productos);
@@ -56,24 +58,34 @@ class ProductoController extends Controller
 
     public function edit($codigo)
     {
-        $productos = $this->obtenerProductos();
+        $productos = $this->obtenerProductos() ?? [];
 
-        $producto = collect($productos)
-            ->firstWhere('codigo', $codigo);
+        $producto = null;
+
+        foreach ($productos as $p) {
+            if ($p['codigo'] == $codigo) {
+                $producto = $p;
+                break;
+            }
+        }
+
+        if (!$producto) {
+            return redirect()->route('productos.index');
+        }
 
         return view('edit', compact('producto'));
     }
 
     public function update(Request $request, $codigo)
     {
-        $productos = $this->obtenerProductos();
+        $productos = $this->obtenerProductos() ?? [];
 
         foreach ($productos as &$producto) {
             if ($producto['codigo'] == $codigo) {
-                $producto['nombre'] = $request->nombre;
-                $producto['precio'] = $request->precio;
-                $producto['cantidad'] = $request->cantidad;
-                $producto['categoria'] = $request->categoria;
+                $producto['nombre'] = $request->nombre ?? '';
+                $producto['precio'] = $request->precio ?? 0;
+                $producto['cantidad'] = $request->cantidad ?? 0;
+                $producto['categoria'] = $request->categoria ?? '';
             }
         }
 
@@ -84,12 +96,11 @@ class ProductoController extends Controller
 
     public function destroy($codigo)
     {
-        $productos = $this->obtenerProductos();
+        $productos = $this->obtenerProductos() ?? [];
 
-        $productos = array_filter(
-            $productos,
-            fn($p) => $p['codigo'] != $codigo
-        );
+        $productos = array_filter($productos, function ($p) use ($codigo) {
+            return $p['codigo'] != $codigo;
+        });
 
         $this->guardarProductos(array_values($productos));
 
