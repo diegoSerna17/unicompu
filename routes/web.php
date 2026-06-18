@@ -13,4 +13,4 @@ Route::get('/productos/{codigo}/edit', [ProductoController::class, 'edit'])->nam
 Route::put('/productos/{codigo}', [ProductoController::class, 'update'])->name('productos.update');
 Route::delete('/productos/{codigo}', [ProductoController::class, 'destroy'])->name('productos.destroy');
 
-Route::get('/api/productos', [ProductoController::class, 'api']);
+Route::get('/api/productos', [App\Http\Controllers\ProductoController::class, 'api'])->name('productos.api');
