@@ -3,53 +3,71 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\File;
 
 class ProductoController extends Controller
 {
     private $file = 'productos.json';
 
+    // =========================
+    // PATH (IMPORTANTE RENDER SAFE)
+    // =========================
     private function getPath()
     {
-        return storage_path('app/' . $this->file);
+        return sys_get_temp_dir() . '/' . $this->file;
     }
 
+    // =========================
+    // LEER (JSON → ARRAY)
+    // =========================
     private function obtenerProductos()
     {
         $path = $this->getPath();
 
-        if (!File::exists($path)) {
-            File::ensureDirectoryExists(dirname($path));
-            File::put($path, json_encode([]));
+        if (!file_exists($path)) {
+            file_put_contents($path, json_encode([]));
         }
 
-        return json_decode(File::get($path), true) ?? [];
+        $json = file_get_contents($path);
+
+        $array = json_decode($json, true);
+
+        return is_array($array) ? $array : [];
     }
 
+    // =========================
+    // GUARDAR (ARRAY → JSON)
+    // =========================
     private function guardarProductos($productos)
     {
         $path = $this->getPath();
 
-        File::ensureDirectoryExists(dirname($path));
-
-        File::put($path, json_encode(array_values($productos), JSON_PRETTY_PRINT));
+        file_put_contents($path, json_encode($productos, JSON_PRETTY_PRINT));
     }
 
+    // =========================
+    // INDEX
+    // =========================
     public function index()
     {
-        return view('productos.index', [
-            'productos' => $this->obtenerProductos()
-        ]);
+        $productos = $this->obtenerProductos();
+
+        return view('productos.index', compact('productos'));
     }
 
+    // =========================
+    // CREATE
+    // =========================
     public function create()
     {
         return view('productos.create');
     }
 
+    // =========================
+    // STORE (CREAR)
+    // =========================
     public function store(Request $request)
     {
-        $productos = $this->obtenerProductos();
+        $productos = $this->obtenerProductos(); // ARRAY
 
         $productos[] = [
             'codigo' => $request->codigo,
@@ -61,23 +79,28 @@ class ProductoController extends Controller
 
         $this->guardarProductos($productos);
 
-        return redirect()->route('productos.index')
-            ->with('success', 'Producto creado correctamente');
+        return redirect('/productos')->with('success', 'Producto creado');
     }
 
+    // =========================
+    // EDIT
+    // =========================
     public function edit($codigo)
     {
         $productos = $this->obtenerProductos();
 
-        $producto = collect($productos)->firstWhere('codigo', $codigo);
-
-        if (!$producto) {
-            return redirect()->route('productos.index');
+        foreach ($productos as $p) {
+            if ($p['codigo'] == $codigo) {
+                return view('productos.edit', ['producto' => $p]);
+            }
         }
 
-        return view('productos.edit', compact('producto'));
+        return redirect('/productos');
     }
 
+    // =========================
+    // UPDATE
+    // =========================
     public function update(Request $request, $codigo)
     {
         $productos = $this->obtenerProductos();
@@ -93,10 +116,12 @@ class ProductoController extends Controller
 
         $this->guardarProductos($productos);
 
-        return redirect()->route('productos.index')
-            ->with('success', 'Producto actualizado');
+        return redirect('/productos')->with('success', 'Actualizado');
     }
 
+    // =========================
+    // DELETE
+    // =========================
     public function destroy($codigo)
     {
         $productos = $this->obtenerProductos();
@@ -108,12 +133,21 @@ class ProductoController extends Controller
 
         $this->guardarProductos($productos);
 
-        return redirect()->route('productos.index')
-            ->with('success', 'Producto eliminado');
+        return redirect('/productos')->with('success', 'Eliminado');
     }
 
-    public function api()
+    // =========================
+    // JSON VIEW
+    // =========================
+    public function json()
     {
         return response()->json($this->obtenerProductos());
     }
+
+
+    public function api()
+{
+    return response()->json($this->obtenerProductos());
 }
+}
+

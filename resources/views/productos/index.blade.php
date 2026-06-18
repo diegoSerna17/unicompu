@@ -79,8 +79,8 @@
     <div class="top">
         <h2>📦 Lista de Productos</h2>
 
-        <a href="{{ route('productos.json') }}" target="_blank" class="btn btn-json">
-    📄 Ver JSON
+<a href="{{ route('productos.json') }}" target="_blank">
+    Ver JSON
 </a>
 
         <a href="{{ route('productos.create') }}" class="btn btn-create">
