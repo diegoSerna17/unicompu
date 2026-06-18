@@ -7,14 +7,13 @@ use Illuminate\Support\Facades\Storage;
 
 class ProductoController extends Controller
 {
-    private $file = 'productos.json';
+    private $file = 'public/productos.json';
 
     // =========================
     // LEER PRODUCTOS
     // =========================
     private function obtenerProductos()
     {
-        // Crear archivo si no existe
         if (!Storage::exists($this->file)) {
             Storage::put($this->file, json_encode([]));
         }
@@ -41,8 +40,9 @@ class ProductoController extends Controller
     // =========================
     public function index()
     {
-        $productos = $this->obtenerProductos();
-        return view('productos', compact('productos'));
+        return view('productos', [
+            'productos' => $this->obtenerProductos()
+        ]);
     }
 
     // =========================
@@ -141,7 +141,7 @@ class ProductoController extends Controller
     }
 
     // =========================
-    // API JSON
+    // API
     // =========================
     public function api()
     {
