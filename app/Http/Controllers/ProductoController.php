@@ -6,123 +6,139 @@ use Illuminate\Http\Request;
 
 class ProductoController extends Controller
 {
-    private $archivo = 'productos.json';
+    /**
+     * Obtiene la ruta del archivo JSON dependiendo del entorno.
+     */
+    private function getJsonPath()
+    {
+        // Si la carpeta /data existe (entorno de Render con disco persistente)
+        if (is_dir('/data')) {
+            return '/data/productos.json';
+        }
+        // Entorno local (tu PC)
+        return storage_path('app/productos.json');
+    }
 
-    // Lee los productos desde el JSON (Con soporte para local y para el disco de Render)
+    /**
+     * Lee los productos desde el archivo JSON.
+     */
     private function obtenerProductos()
     {
-        // Si la carpeta /data existe (estamos en Render), guardamos ahí directamente con permisos de escritura.
-        // Si no, usamos el storage normal (para cuando pruebes en local con XAMPP o Docker)
-        $carpeta = is_dir('/data') ? '/data/' : storage_path('app/');
-        $ruta = $carpeta . $this->archivo;
+        $path = $this->getJsonPath();
 
-        // Si el archivo no existe en la ruta correspondiente, lo creamos vacío
-        if (!file_exists($ruta)) {
-            file_put_contents($ruta, '[]');
+        // Si el archivo no existe, lo crea con un array vacío []
+        if (!file_exists($path)) {
+            file_put_contents($path, json_encode([], JSON_PRETTY_PRINT));
+            return [];
         }
 
-        $data = file_get_contents($ruta);
-
-        return json_decode($data, true) ?? [];
+        $json = file_get_contents($path);
+        return json_decode($json, true) ?? [];
     }
 
-    // Guarda los productos en el JSON (Con soporte para local y para el disco de Render)
+    /**
+     * Guarda la lista de productos en el archivo JSON.
+     */
     private function guardarProductos($productos)
     {
-        $carpeta = is_dir('/data') ? '/data/' : storage_path('app/');
-        $ruta = $carpeta . $this->archivo;
+        $path = $this->getJsonPath();
+        
+        // Nos aseguramos de que el directorio exista (útil en local)
+        $dir = dirname($path);
+        if (!is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
 
-        file_put_contents($ruta, json_encode($productos, JSON_PRETTY_PRINT));
+        file_put_contents($path, json_encode(array_values($productos), JSON_PRETTY_PRINT));
     }
 
-    // Lista todos los productos en la vista principal
+    /**
+     * Muestra la vista principal con la lista de productos.
+     */
     public function index()
     {
-        $productos = $this->obtenerProductos() ?? [];
-        return view('productos', compact('productos'));
+        $productos = $this->obtenerProductos();
+        return view('productos.index', compact('productos'));
     }
 
-    // Muestra el formulario de creación
-    public function create()
-    {
-        return view('create');
-    }
-
-    // Guarda un nuevo producto enviado desde el formulario
+    /**
+     * Almacena un nuevo producto en el JSON.
+     */
     public function store(Request $request)
     {
-        $productos = $this->obtenerProductos() ?? [];
+        $request->validate([
+            'nombre' => 'required|string|max:255',
+            'precio' => 'required|numeric|min:0',
+            'descripcion' => 'nullable|string',
+        ]);
 
-        $productos[] = [
-            'codigo' => $request->codigo ?? '',
-            'nombre' => $request->nombre ?? '',
-            'precio' => $request->precio ?? 0,
-            'cantidad' => $request->cantidad ?? 0,
-            'categoria' => $request->categoria ?? '',
+        $productos = $this->obtenerProductos();
+
+        // Crear el nuevo producto con un ID único basado en el tiempo
+        $nuevoProducto = [
+            'id' => time(),
+            'nombre' => $request->nombre,
+            'precio' => $request->precio,
+            'descripcion' => $request->descripcion ?? '',
         ];
 
+        $productos[] = $nuevoProducto;
         $this->guardarProductos($productos);
 
-        return redirect()->route('productos.index');
+        return redirect()->route('productos.index')->with('success', 'Producto creado correctamente.');
     }
 
-    // Muestra el formulario de edición para un producto específico
-    public function edit($codigo)
+    /**
+     * Actualiza un producto existente en el JSON.
+     */
+    public function update(Request $request, $id)
     {
-        $productos = $this->obtenerProductos() ?? [];
-        $producto = null;
+        $request->validate([
+            'nombre' => 'required|string|max:255',
+            'precio' => 'required|numeric|min:0',
+            'descripcion' => 'nullable|string',
+        ]);
 
-        foreach ($productos as $p) {
-            if ($p['codigo'] == $codigo) {
-                $producto = $p;
+        $productos = $this->obtenerProductos();
+        $encontrado = false;
+
+        foreach ($productos as &$producto) {
+            if ($producto['id'] == $id) {
+                $producto['nombre'] = $request->nombre;
+                $producto['precio'] = $request->precio;
+                $producto['descripcion'] = $request->descripcion ?? '';
+                $encontrado = true;
                 break;
             }
         }
 
-        if (!$producto) {
-            return redirect()->route('productos.index');
-        }
-
-        return view('edit', compact('producto'));
-    }
-
-    // Actualiza los datos de un producto editado
-    public function update(Request $request, $codigo)
-    {
-        $productos = $this->obtenerProductos() ?? [];
-
-        foreach ($productos as &$producto) {
-            if ($producto['codigo'] == $codigo) {
-                $producto['nombre'] = $request->nombre ?? '';
-                $producto['precio'] = $request->precio ?? 0;
-                $producto['cantidad'] = $request->cantidad ?? 0;
-                $producto['categoria'] = $request->categoria ?? '';
-            }
+        if (!$encontrado) {
+            return redirect()->route('productos.index')->with('error', 'Producto no encontrado.');
         }
 
         $this->guardarProductos($productos);
 
-        return redirect()->route('productos.index');
+        return redirect()->route('productos.index')->with('success', 'Producto actualizado correctamente.');
     }
 
-    // Elimina un producto por su código
-    public function destroy($codigo)
+    /**
+     * Elimina un producto del JSON.
+     */
+    public function destroy($id)
     {
-        $productos = $this->obtenerProductos() ?? [];
-
-        $productos = array_filter($productos, function ($p) use ($codigo) {
-            return $p['codigo'] != $codigo;
+        $productos = $this->obtenerProductos();
+        
+        // Filtramos para mantener todos los productos MENOS el que tenga el ID enviado
+        $productosFiltrados = array_filter($productos, function ($producto) use ($id) {
+            return $producto['id'] != $id;
         });
 
-        // array_values reindexa las posiciones del array para que el JSON quede limpio
-        $this->guardarProductos(array_values($productos));
+        if (count($productos) === count($productosFiltrados)) {
+            return redirect()->route('productos.index')->with('error', 'Producto no encontrado.');
+        }
 
-        return redirect()->route('productos.index');
-    }
+        $this->guardarProductos($productosFiltrados);
 
-    // Retorna los datos como una API limpia en formato JSON
-    public function api()
-    {
-        return response()->json($this->obtenerProductos());
+        return redirect()->route('productos.index')->with('success', 'Producto eliminado correctamente.');
     }
 }
