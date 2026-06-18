@@ -1,159 +1,115 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crear Producto</title>
-    
-    <style>
-        /* Estilos generales y fondo */
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f4f6f9;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crear Producto</title>
 
-        /* Tarjeta contenedora del formulario */
-        .form-container {
-            background-color: #ffffff;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-            width: 100%;
-            max-width: 400px;
-        }
+<style>
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f4f6f9;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
 
-        /* Título principal */
-        h2 {
-            text-align: center;
-            color: #333333;
-            margin-top: 0;
-            margin-bottom: 24px;
-            font-size: 24px;
-        }
+.form-container {
+    background-color: #ffffff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    width: 100%;
+    max-width: 400px;
+}
 
-        /* Grupo de campos (Label + Input) */
-        .form-group {
-            margin-bottom: 16px;
-        }
+h2 {
+    text-align: center;
+    margin-bottom: 24px;
+    color: #333;
+}
 
-        /* Estilos de las etiquetas */
-        label {
-            display: block;
-            margin-bottom: 6px;
-            color: #555555;
-            font-size: 14px;
-            font-weight: 600;
-        }
+.form-group {
+    margin-bottom: 16px;
+}
 
-        /* Estilos de todos los inputs */
-        input {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #cccccc;
-            border-radius: 8px;
-            font-size: 15px;
-            box-sizing: border-box; /* Evita que el padding deforme el ancho */
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
+label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+}
 
-        /* Efecto cuando el usuario hace clic en el input */
-        input:focus {
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-            outline: none;
-        }
+input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+}
 
-        /* Fila para poner Precio y Cantidad juntos */
-        .form-row {
-            display: flex;
-            gap: 16px;
-        }
-        .form-row .form-group {
-            flex: 1;
-        }
+button {
+    width: 100%;
+    background-color: #2563eb;
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+}
 
-        /* El botón de guardar */
-        button {
-            width: 100%;
-            background-color: #2563eb;
-            color: #ffffff;
-            border: none;
-            padding: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            margin-top: 10px;
-        }
+button:hover {
+    background-color: #1d4ed8;
+}
 
-        /* Efecto hover del botón */
-        button:hover {
-            background-color: #1d4ed8;
-        }
-
-        /* Enlace de volver */
-        .back-link {
-            display: block;
-            text-align: center;
-            margin-top: 20px;
-            color: #666666;
-            text-decoration: none;
-            font-size: 14px;
-            transition: color 0.2s;
-        }
-
-        .back-link:hover {
-            color: #2563eb;
-        }
-    </style>
+.back-link {
+    display: block;
+    text-align: center;
+    margin-top: 15px;
+    color: #666;
+    text-decoration: none;
+}
+</style>
 </head>
 
 <body>
 
-    <div class="form-container">
-        <h2>Crear Producto</h2>
+<div class="form-container">
+    <h2>Crear Producto</h2>
 
-        <form action="{{ route('productos.store') }}" method="POST">
-            @csrf
+    <form action="{{ route('productos.store') }}" method="POST">
+        @csrf
 
-            <div class="form-group">
-                <label>Código</label>
-                <input name="codigo" placeholder="Ej: PROD-100">
-            </div>
+        <div class="form-group">
+            <label>Código</label>
+            <input name="codigo" required>
+        </div>
 
-            <div class="form-group">
-                <label>Nombre</label>
-                <input name="nombre" placeholder="Nombre del producto">
-            </div>
+        <div class="form-group">
+            <label>Nombre</label>
+            <input name="nombre" required>
+        </div>
 
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Precio</label>
-                    <input name="precio" placeholder="0.00">
-                </div>
-                <div class="form-group">
-                    <label>Cantidad</label>
-                    <input name="cantidad" placeholder="Cantidad">
-                </div>
-            </div>
+        <div class="form-group">
+            <label>Precio</label>
+            <input name="precio" required>
+        </div>
 
-            <div class="form-group">
-                <label>Categoría</label>
-                <input name="categoria" placeholder="Categoría del producto">
-            </div>
+        <div class="form-group">
+            <label>Cantidad</label>
+            <input name="cantidad" required>
+        </div>
 
-            <button type="submit">Guardar Producto</button>
-        </form>
+        <div class="form-group">
+            <label>Categoría</label>
+            <input name="categoria" required>
+        </div>
 
-        <a href="{{ route('productos.index') }}" class="back-link">← Volver al listado</a>
-    </div>
+        <button type="submit">Guardar Producto</button>
+    </form>
+
+    <a href="{{ route('productos.index') }}" class="back-link">← Volver</a>
+</div>
 
 </body>
 </html>

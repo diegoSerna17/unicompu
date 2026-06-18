@@ -6,166 +6,110 @@ use Illuminate\Http\Request;
 
 class ProductoController extends Controller
 {
-    /**
-     * Obtiene la lista de productos guardada en la sesión.
-     * Si no existe, la inicializa con los datos del archivo JSON original de storage.
-     */
     private function obtenerProductos()
     {
-        if (session()->has('productos')) {
-            return session('productos');
-        }
-
         $path = storage_path('app/productos.json');
-        if (file_exists($path)) {
-            $json = file_get_contents($path);
-            $productos = json_decode($json, true) ?? [];
-            
-            session(['productos' => $productos]);
-            return $productos;
+
+        if (!file_exists($path)) {
+            file_put_contents($path, json_encode([]));
         }
 
-        return [];
+        $productos = json_decode(file_get_contents($path), true);
+
+        return is_array($productos) ? $productos : [];
     }
 
-    /**
-     * Guarda la lista de productos en la sesión del usuario.
-     */
     private function guardarProductos($productos)
     {
-        session(['productos' => array_values($productos)]);
+        $path = storage_path('app/productos.json');
+
+        file_put_contents(
+            $path,
+            json_encode(array_values($productos), JSON_PRETTY_PRINT)
+        );
     }
 
-    /**
-     * Muestra la vista principal con la lista de productos.
-     */
     public function index()
     {
         $productos = $this->obtenerProductos();
         return view('productos', compact('productos'));
     }
 
-    /**
-     * Muestra el formulario para crear un nuevo producto.
-     */
     public function create()
     {
         return view('productos.create');
     }
 
-    /**
-     * Almacena un nuevo producto en la sesión utilizando 'codigo'.
-     */
     public function store(Request $request)
     {
         $request->validate([
-            'codigo'    => 'required|string|max:255',
-            'nombre'    => 'required|string|max:255',
-            'precio'    => 'required|numeric|min:0',
-            'cantidad'  => 'required|integer|min:0',
-            'categoria' => 'required|string|max:255',
+            'codigo' => 'required|string',
+            'nombre' => 'required|string',
+            'precio' => 'required|numeric',
+            'cantidad' => 'required|integer',
+            'categoria' => 'required|string',
         ]);
 
         $productos = $this->obtenerProductos();
 
-        // CORREGIDO: Ahora guardamos 'codigo' en vez de 'id', y sumamos cantidad y categoria
-        $nuevoProducto = [
-            'codigo'    => $request->codigo,
-            'nombre'    => $request->nombre,
-            'precio'    => $request->precio,
-            'cantidad'  => $request->cantidad,
+        $productos[] = [
+            'codigo' => $request->codigo,
+            'nombre' => $request->nombre,
+            'precio' => $request->precio,
+            'cantidad' => $request->cantidad,
             'categoria' => $request->categoria,
         ];
 
-        $productos[] = $nuevoProducto;
         $this->guardarProductos($productos);
 
-        return redirect()->route('productos.index')->with('success', 'Producto creado correctamente.');
+        return redirect()->route('productos.index');
     }
 
-    /**
-     * Muestra el formulario para editar un producto específico utilizando 'codigo'.
-     */
     public function edit($codigo)
     {
         $productos = $this->obtenerProductos();
-        $producto = null;
 
-        foreach ($productos as $p) {
-            // CORREGIDO: Buscamos usando la llave 'codigo'
-            if (isset($p['codigo']) && $p['codigo'] == $codigo) {
-                $producto = $p;
-                break;
-            }
-        }
+        $producto = collect($productos)
+            ->firstWhere('codigo', $codigo);
 
         if (!$producto) {
-            return redirect()->route('productos.index')->with('error', 'Producto no encontrado.');
+            return redirect()->route('productos.index');
         }
 
         return view('productos.edit', compact('producto'));
     }
 
-    /**
-     * Actualiza un producto existente en la sesión mediante su 'codigo'.
-     */
     public function update(Request $request, $codigo)
     {
-        $request->validate([
-            'nombre'    => 'required|string|max:255',
-            'precio'    => 'required|numeric|min:0',
-            'cantidad'  => 'required|integer|min:0',
-            'categoria' => 'required|string|max:255',
-        ]);
-
         $productos = $this->obtenerProductos();
-        $encontrado = false;
 
-        foreach ($productos as &$producto) {
-            // CORREGIDO: Buscamos y actualizamos usando la llave 'codigo'
-            if (isset($producto['codigo']) && $producto['codigo'] == $codigo) {
-                $producto['nombre']    = $request->nombre;
-                $producto['precio']    = $request->precio;
-                $producto['cantidad']  = $request->cantidad;
-                $producto['categoria'] = $request->categoria;
-                $encontrado = true;
-                break;
+        foreach ($productos as &$p) {
+            if (isset($p['codigo']) && $p['codigo'] == $codigo) {
+                $p['nombre'] = $request->nombre;
+                $p['precio'] = $request->precio;
+                $p['cantidad'] = $request->cantidad;
+                $p['categoria'] = $request->categoria;
             }
-        }
-
-        if (!$encontrado) {
-            return redirect()->route('productos.index')->with('error', 'Producto no encontrado.');
         }
 
         $this->guardarProductos($productos);
 
-        return redirect()->route('productos.index')->with('success', 'Producto actualizado correctamente.');
+        return redirect()->route('productos.index');
     }
 
-    /**
-     * Elimina un producto de la sesión usando 'codigo'.
-     */
     public function destroy($codigo)
     {
         $productos = $this->obtenerProductos();
-        
-        // CORREGIDO: Filtramos comparando con la llave 'codigo'
-        $productosFiltrados = array_filter($productos, function ($producto) use ($codigo) {
-            return isset($producto['codigo']) ? $producto['codigo'] != $codigo : true;
+
+        $productos = array_filter($productos, function ($p) use ($codigo) {
+            return isset($p['codigo']) && $p['codigo'] != $codigo;
         });
 
-        if (count($productos) === count($productosFiltrados)) {
-            return redirect()->route('productos.index')->with('error', 'Producto no encontrado.');
-        }
+        $this->guardarProductos($productos);
 
-        $this->guardarProductos($productosFiltrados);
-
-        return redirect()->route('productos.index')->with('success', 'Producto eliminado correctamente.');
+        return redirect()->route('productos.index');
     }
 
-    /**
-     * Endpoint API para responder en formato JSON
-     */
     public function api()
     {
         return response()->json($this->obtenerProductos());
